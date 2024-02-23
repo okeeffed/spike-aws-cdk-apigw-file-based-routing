@@ -2,7 +2,7 @@ import { createDbClient } from "@/db-helper";
 
 export const handler = async () => {
   const db = await createDbClient();
-  const posts = await db.query.posts.findMany({
+  const posts = await db.query.users.findMany({
     limit: 10,
   });
 

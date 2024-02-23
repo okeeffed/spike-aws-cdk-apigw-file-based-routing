@@ -30,6 +30,7 @@ export class DrizzleLambdaLayerConstruct extends Construct {
           "drizzle-zod": "^0.5.1",
           pg: "^8.11.3",
           postgres: "^3.4.3",
+          "@paralleldrive/cuid2": "^2.2.2",
         },
       })
     );
