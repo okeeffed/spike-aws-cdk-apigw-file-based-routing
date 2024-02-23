@@ -46,5 +46,15 @@ export class InfraStack extends cdk.Stack {
         },
       },
     });
+
+    new cdk.CfnOutput(this, "DBConnectionUrl", {
+      value: dbConnectionUrl,
+      description: "The connection URL for the database",
+    });
+
+    new cdk.CfnOutput(this, "DBSecretArn", {
+      value: auroraServerless.cluster.secret?.secretArn || "",
+      description: "The ARN of the secret containing the credentials",
+    });
   }
 }
