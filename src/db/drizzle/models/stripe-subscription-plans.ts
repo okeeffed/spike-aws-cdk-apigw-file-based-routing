@@ -1,0 +1,5 @@
+import { pgTable, text, integer, boolean, timestamp } from 'drizzle-orm/pg-core';
+import { subscriptionIntervalEnum } from './subscription-interval-enum';
+import { subscriptionTierEnum } from './subscription-tier-enum';
+
+export const stripeSubscriptionPlans = pgTable('StripeSubscriptionPlan', { id: text('id').primaryKey(), stripePriceId: text('stripePriceId').notNull(), stripeProductId: text('stripeProductId').notNull(), name: text('name').notNull(), description: text('description'), amount: integer('amount').notNull(), currency: text('currency').notNull(), interval: subscriptionIntervalEnum('interval').notNull(), active: boolean('active').default(true).notNull(), createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).defaultNow().notNull(), updatedAt: timestamp('updatedAt', { mode: 'date', precision: 3 }).defaultNow().notNull(), tier: subscriptionTierEnum('tier').default('FREE').notNull() });

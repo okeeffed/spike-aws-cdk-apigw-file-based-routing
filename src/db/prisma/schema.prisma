@@ -1,0 +1,157 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+generator drizzle {
+  provider = "prisma-generator-drizzle"
+
+  // Specify the output directory
+  output = "../drizzle/models"
+}
+
+model User {
+  id           String     @id
+  clerkUserId  String     @unique
+  firstName    String
+  lastName     String?
+  emailAddress String     @unique
+  role         GlobalRole @default(CUSTOMER)
+
+  // ... other fields
+  posts Post[]
+
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @default(now()) @updatedAt
+  membership Membership[]
+  apiTokens  ApiToken[]
+}
+
+model Organization {
+  id                    String  @id @default(cuid())
+  clerkOrganizationId   String  @unique
+  name                  String
+  stripeCustomerId      String? @unique
+  stripeSubscriptionId  String?
+  stripePaymentMethodId String?
+
+  // TODO: Make required and remove optional 
+  stripeSubscriptionPlan   StripeSubscriptionPlan? @relation(fields: [stripeSubscriptionPlanId], references: [id])
+  stripeSubscriptionPlanId String?
+
+  membership Membership[]
+  apiTokens  ApiToken[]
+  invoices   StripeInvoice[]
+
+  @@index([name])
+  @@index([stripeCustomerId])
+}
+
+model StripeSubscriptionPlan {
+  id              String               @id @default(cuid())
+  stripePriceId   String               @unique
+  stripeProductId String
+  name            String
+  description     String?
+  amount          Int
+  currency        String
+  interval        SubscriptionInterval
+  active          Boolean              @default(true)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @default(now()) @updatedAt
+  organization    Organization[]
+  tier            SubscriptionTier     @default(FREE)
+}
+
+enum SubscriptionInterval {
+  MONTH
+  YEAR
+}
+
+enum SubscriptionTier {
+  FREE
+  BASIC
+  PRO
+  ENTERPRISE
+}
+
+model StripeInvoice {
+  id               String       @id @default(cuid())
+  invoiceId        String       @unique // This comes from Stripe
+  organization     Organization @relation(fields: [organizationId], references: [id])
+  organizationId   String
+  amountDue        Int
+  amountPaid       Int
+  hostedInvoiceUrl String
+  invoicePdfUrl    String
+}
+
+model Membership {
+  id                            String         @id @default(cuid())
+  clerkOrganizationMembershipId String         @unique
+  // TODO: Add more clerk organization information
+  role                          MembershipRole
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
+
+  user   User?   @relation(fields: [userId], references: [id])
+  userId String?
+
+  @@unique([organizationId, userId])
+}
+
+enum MembershipRole {
+  OWNER
+  ADMIN
+  USER
+}
+
+// The owners of the SaaS (you) can have a SUPERADMIN role to access all data
+enum GlobalRole {
+  SUPERADMIN
+  CUSTOMER
+}
+
+// Model for Post
+model Post {
+  id        String  @id @default(cuid())
+  title     String
+  content   String?
+  published Boolean @default(false)
+  authorId  String
+  author    User    @relation(fields: [authorId], references: [id])
+}
+
+model ApiToken {
+  id             String        @id @default(cuid())
+  hash           String        @db.VarChar(60)
+  prefix         String        @db.VarChar(255)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @default(now()) @updatedAt
+  expiresAt      DateTime
+  state          TokenState    @default(VALID)
+  permissions    Json
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?
+  user           User          @relation(fields: [userId], references: [id])
+  userId         String
+
+  @@unique([prefix])
+  @@index([prefix])
+}
+
+enum TokenState {
+  VALID
+  SUSPENDED
+  ARCHIVED
+  EXPIRED
+}

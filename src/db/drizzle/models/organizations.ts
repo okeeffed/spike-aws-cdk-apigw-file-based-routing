@@ -1,0 +1,3 @@
+import { pgTable, text } from 'drizzle-orm/pg-core';
+
+export const organizations = pgTable('Organization', { id: text('id').primaryKey(), clerkOrganizationId: text('clerkOrganizationId').notNull(), name: text('name').notNull(), stripeCustomerId: text('stripeCustomerId'), stripeSubscriptionId: text('stripeSubscriptionId'), stripePaymentMethodId: text('stripePaymentMethodId'), stripeSubscriptionPlanId: text('stripeSubscriptionPlanId') });

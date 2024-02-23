@@ -1,0 +1,4 @@
+import { pgTable, text, timestamp, jsonb } from 'drizzle-orm/pg-core';
+import { tokenStateEnum } from './token-state-enum';
+
+export const apiTokens = pgTable('ApiToken', { id: text('id').primaryKey(), hash: text('hash').notNull(), prefix: text('prefix').notNull(), createdAt: timestamp('createdAt', { mode: 'date', precision: 3 }).defaultNow().notNull(), updatedAt: timestamp('updatedAt', { mode: 'date', precision: 3 }).defaultNow().notNull(), expiresAt: timestamp('expiresAt', { mode: 'date', precision: 3 }).notNull(), state: tokenStateEnum('state').default('VALID').notNull(), permissions: jsonb('permissions').notNull(), organizationId: text('organizationId'), userId: text('userId').notNull() });

@@ -1,0 +1,3 @@
+import { pgTable, text, integer } from 'drizzle-orm/pg-core';
+
+export const stripeInvoices = pgTable('StripeInvoice', { id: text('id').primaryKey(), invoiceId: text('invoiceId').notNull(), organizationId: text('organizationId').notNull(), amountDue: integer('amountDue').notNull(), amountPaid: integer('amountPaid').notNull(), hostedInvoiceUrl: text('hostedInvoiceUrl').notNull(), invoicePdfUrl: text('invoicePdfUrl').notNull() });
