@@ -3,6 +3,8 @@
 # Exit on any errors
 set -e
 
+export LLRT=1
+
 # # Step 1: Run docker compose up
 # echo "Starting LocalStack with Docker Compose..."
 # docker compose up -d

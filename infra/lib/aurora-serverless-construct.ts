@@ -31,6 +31,7 @@ export class ServerlessAuroraConstruct extends Construct {
         }),
         serverlessV2MinCapacity: 0.5,
         serverlessV2MaxCapacity: 1,
+        writer: rds.ClusterInstance.serverlessV2("writer"),
         readers: [
           // will be put in promotion tier 1 and will scale with the writer
           rds.ClusterInstance.serverlessV2("reader1", {
@@ -39,11 +40,7 @@ export class ServerlessAuroraConstruct extends Construct {
           // will be put in promotion tier 2 and will not scale with the writer
           rds.ClusterInstance.serverlessV2("reader2"),
         ],
-        instanceProps: {
-          // Instance properties are required, but we minimize the configuration
-          // since we're focusing on serverless' automatic scaling.
-          vpc: props.vpc,
-        },
+        vpc: props.vpc,
         credentials: rds.Credentials.fromGeneratedSecret(
           props.dbUser ?? "admin"
         ),

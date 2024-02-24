@@ -12,30 +12,10 @@ export class DrizzleLambdaLayerConstruct extends Construct {
 
     // Create Lambda Layer
     this.layer = new lambda.LayerVersion(this, "Layer", {
-      code: lambda.Code.fromAsset(path.join(__dirname, "layer-code")),
+      code: lambda.Code.fromAsset(path.join(__dirname, "drizzle-layer")),
       compatibleRuntimes: [lambda.Runtime.NODEJS_20_X], // Use lambda.Runtime for specifying the runtime
       description: "Lambda Layer containing required dependencies",
     });
-
-    // Install dependencies in layer code directory
-    const layerCodeDir = path.join(__dirname, "layer-code");
-    if (!fs.existsSync(layerCodeDir)) {
-      fs.mkdirSync(layerCodeDir);
-    }
-    fs.writeFileSync(
-      path.join(layerCodeDir, "package.json"),
-      JSON.stringify({
-        dependencies: {
-          "drizzle-orm": "^0.29.3",
-          "drizzle-zod": "^0.5.1",
-          pg: "^8.11.3",
-          postgres: "^3.4.3",
-          "@paralleldrive/cuid2": "^2.2.2",
-        },
-      })
-    );
-    fs.writeFileSync(path.join(layerCodeDir, "package-lock.json"), "{}");
-    fs.writeFileSync(path.join(layerCodeDir, "index.js"), "");
 
     // Output ARN of the layer
     new CfnOutput(this, "LayerArn", {
