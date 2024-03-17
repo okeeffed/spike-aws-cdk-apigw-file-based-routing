@@ -7,6 +7,9 @@ import { FileBasedApiGwConstruct } from "./file-based-apigw-construct";
 import path = require("path");
 import { LlrtFunction } from "cdk-lambda-llrt";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
+import { Queue } from "aws-cdk-lib/aws-sqs";
+import { SqsWithDlqCwConstruct } from "./sqs-with-dlq-cw-lambda-construct";
+import { SqsJobsConstruct } from "./sqs-jobs-construct";
 
 export class InfraStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -36,6 +39,17 @@ export class InfraStack extends cdk.Stack {
 
     // const dbConnectionUrl = `postgresql://${auroraServerless.cluster.clusterEndpoint.hostname}:${auroraServerless.cluster.clusterEndpoint.port}/${defaultDatabaseName}`;
 
+    // Creating the queues for jobs
+    const queueMap = new Map<string, Queue>();
+
+    const exampleQueue = new SqsWithDlqCwConstruct(this, "ExampleQueue", {
+      lambdas: [],
+      deadLetterQueueName: "ExampleDeadLetterQueue",
+      queueName: "ExampleQueue",
+    });
+
+    queueMap.set("example-queue", exampleQueue.queue);
+
     new FileBasedApiGwConstruct(this, "FileBasedApiGw-Test", {
       restApiProps: {
         restApiName: "file-based-api-gw-test",
@@ -46,10 +60,13 @@ export class InfraStack extends cdk.Stack {
         // TODO: When completed
         // role: auroraServerless.lambdaExecutionRole,
         // vpc,
-        // environment: {
-        //   DB_CONNECTION_URL: dbConnectionUrl, // The constructed URL
-        //   DB_SECRET_ARN: auroraServerless.cluster.secret?.secretArn || "", // The ARN of the secret containing the credentials
-        // },
+        environment: {
+          // DB_CONNECTION_URL: dbConnectionUrl, // The constructed URL
+          // DB_SECRET_ARN: auroraServerless.cluster.secret?.secretArn || "", // The ARN of the secret containing the credentials
+
+          // Note: this will only be accessible by the Lambda function that has the correct permissions
+          EXAMPLE_QUEUE_URL: exampleQueue.queue.queueUrl,
+        },
       },
       logGroupProps: {
         removalPolicy: cdk.RemovalPolicy.DESTROY, // Optional: Specify removal policy
@@ -57,9 +74,14 @@ export class InfraStack extends cdk.Stack {
       esbuildOptions: {
         external: ["aws-sdk"],
       },
-      lambdaInputDirectoryPath: path.join(__dirname, "../../src/_lambdas"),
-      lambdaOutputDirectoryPath: path.join(__dirname, "../../dist/_lambdas"),
+      lambdaInputDirectoryPath: path.join(__dirname, "../../src/api"),
+      lambdaOutputDirectoryPath: path.join(__dirname, "../../dist/api"),
       LambdaFunctionClass: process.env.LLRT ? LlrtFunction : NodejsFunction,
+    });
+
+    new SqsJobsConstruct(this, "SqsJobsConstruct", {
+      jobsDirectoryPath: path.join(__dirname, "../../dist/jobs"),
+      queueMap,
     });
 
     // TODO: When completed
