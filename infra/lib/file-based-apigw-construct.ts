@@ -39,22 +39,6 @@ function isHttpMethod(str: string): str is HttpMethod {
   );
 }
 
-function getFileNameWithoutExtension(filePath: string): string {
-  // Get the base name of the file
-  const basename = path.basename(filePath);
-
-  // Find the last occurrence of "." to get the file extension
-  const lastDotIndex = basename.lastIndexOf(".");
-
-  // If there's no dot or it's the first character, return the base name as it is
-  if (lastDotIndex <= 0) {
-    return basename;
-  }
-
-  // Otherwise, return the substring from the start to the last dot
-  return basename.substring(0, lastDotIndex);
-}
-
 function removeSpecialCharacters(input: string): string {
   return input.replace(
     // replace all special characters
@@ -159,15 +143,19 @@ export class FileBasedApiGwConstruct extends Construct {
     inputFilePath: string;
   }): HttpMethod {
     try {
-      const fileName = getFileNameWithoutExtension(inputFilePath);
+      const pathToInputFileArr = inputFilePath.split("/");
 
-      if (!isHttpMethod(fileName)) {
+      // Extract HTTP method from parent folder
+      const parentFolderName =
+        pathToInputFileArr[pathToInputFileArr.length - 2];
+
+      if (!isHttpMethod(parentFolderName)) {
         throw new Error(
-          `Filename ${fileName} at ${inputFilePath} is not of type HttpMethod`
+          `Parent folder ${parentFolderName} at ${inputFilePath} is not of type HttpMethod`
         );
       }
 
-      return fileName;
+      return parentFolderName;
     } catch (err) {
       if (err instanceof Error) {
         throw new Error(`Invalid method name error: ${err.message}`);
