@@ -1,8 +1,9 @@
 import { Handler } from "aws-lambda";
 import * as AWS from "aws-sdk";
-const sqs = new AWS.SQS({ apiVersion: "2012-11-05" });
 
 export const handler: Handler = async (event) => {
+  const sqs = new AWS.SQS({ apiVersion: "2012-11-05" });
+
   if (!process.env.EXAMPLE_QUEUE_URL) {
     throw new Error("EXAMPLE_QUEUE_URL is not set");
   }

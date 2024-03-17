@@ -28,7 +28,7 @@ files.forEach((file) => {
       platform: "node",
       target: "es2020",
       format: "cjs",
-      external: ["aws-sdk"],
+      external: ["aws-sdk", "aws-lambda", "@types/aws-lambda"],
       minify: true,
     })
     .catch(() => process.exit(1));
