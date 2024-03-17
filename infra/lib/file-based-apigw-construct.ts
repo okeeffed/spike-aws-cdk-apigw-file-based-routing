@@ -133,6 +133,13 @@ export class FileBasedApiGwConstruct extends Construct {
       handler: `handler`,
       entry,
       logGroup,
+      bundling: {
+        platform: "node",
+        target: "es2020",
+        minify: true,
+        sourceMap: true,
+        externalModules: ["aws-sdk", "aws-lambda"],
+      },
       // Use this to attach lambdas, role, vpc and environment props
       // or even just make some overrides
       ...this.#lambdaProps,

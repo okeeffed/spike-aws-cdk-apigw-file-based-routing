@@ -1,44 +1,74 @@
+import * as fs from "fs";
+import * as path from "path";
 import { Construct } from "constructs";
 import { Queue, QueueProps } from "aws-cdk-lib/aws-sqs";
-import { Function } from "aws-cdk-lib/aws-lambda";
 import { LogGroup } from "aws-cdk-lib/aws-logs";
 
 interface SqsWithDlqCwProps {
-  /** Add list of lambdas that should have sendMessage permissions for the queue */
-  lambdas: Function[];
-  deadLetterQueueName: string;
-  queueName: string;
+  jobsDirectoryPath: string;
   queueProps?: QueueProps;
   deadLetterQueueProps?: QueueProps;
 }
 
 export class SqsWithDlqCwConstruct extends Construct {
-  public queue: Queue;
-  public deadLetterQueue: Queue;
+  public queueMap = new Map<string, Queue>();
   public logGroup: LogGroup;
 
   constructor(scope: Construct, id: string, props: SqsWithDlqCwProps) {
     super(scope, id);
 
-    // Create DLQ
-    this.deadLetterQueue = new Queue(this, props.deadLetterQueueName, {
-      queueName: props.deadLetterQueueName,
-      ...(props.deadLetterQueueProps ?? {}),
+    this.recursivelyCreateQueues({
+      props,
+      prefix: "",
     });
+  }
 
-    // Create main queue with DLQ as its dead letter queue
-    this.queue = new Queue(this, props.queueName, {
-      queueName: props.queueName,
-      deadLetterQueue: {
-        queue: this.deadLetterQueue,
-        maxReceiveCount: 5, // adjust based on your needs
-      },
-      ...(props.queueProps ?? {}),
-    });
+  private recursivelyCreateQueues({
+    props,
+    prefix,
+  }: {
+    props: SqsWithDlqCwProps;
+    prefix: string;
+  }) {
+    const dir = `${props.jobsDirectoryPath}/${prefix}`;
+    const files = fs.readdirSync(dir);
 
-    // Grant permissions to the provided Lambda functions to send messages to the queue
-    props.lambdas.forEach((lambda) => {
-      this.queue.grantSendMessages(lambda);
-    });
+    for (const file of files) {
+      const filePath = path.join(dir, file);
+      const stats = fs.statSync(filePath);
+
+      if (stats.isDirectory()) {
+        // Recursively create Lambda functions for subdirectories
+        const folderName = path.basename(filePath);
+
+        this.recursivelyCreateQueues({
+          props,
+          prefix: `${prefix}${folderName}/`,
+        });
+      } else if (file.endsWith(".js")) {
+        // Get job name from file path
+        const pathToFileArr = filePath.split("/");
+        const jobName = pathToFileArr[pathToFileArr.length - 2];
+        const dlqName = `${jobName}-dlq`;
+
+        // Create DLQ
+        const deadLetterQueue = new Queue(this, dlqName, {
+          queueName: dlqName,
+          ...(props.deadLetterQueueProps ?? {}),
+        });
+
+        // Create main queue with DLQ as its dead letter queue
+        const queue = new Queue(this, jobName, {
+          queueName: jobName,
+          deadLetterQueue: {
+            queue: deadLetterQueue,
+            maxReceiveCount: 5, // adjust based on your needs
+          },
+        });
+
+        this.queueMap.set(jobName, queue);
+        this.queueMap.set(dlqName, deadLetterQueue);
+      }
+    }
   }
 }

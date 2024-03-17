@@ -40,17 +40,13 @@ export class InfraStack extends cdk.Stack {
     // const dbConnectionUrl = `postgresql://${auroraServerless.cluster.clusterEndpoint.hostname}:${auroraServerless.cluster.clusterEndpoint.port}/${defaultDatabaseName}`;
 
     // Creating the queues for jobs
-    const queueMap = new Map<string, Queue>();
-
-    const exampleQueue = new SqsWithDlqCwConstruct(this, "ExampleQueue", {
-      lambdas: [],
-      deadLetterQueueName: "ExampleDeadLetterQueue",
-      queueName: "ExampleQueue",
+    const jobQueues = new SqsWithDlqCwConstruct(this, "ExampleQueue", {
+      jobsDirectoryPath: path.join(__dirname, "../../dist/jobs"),
     });
 
-    queueMap.set("example-queue", exampleQueue.queue);
+    const exampleQueue = jobQueues.queueMap.get("example-queue") as Queue;
 
-    new FileBasedApiGwConstruct(this, "FileBasedApiGw-Test", {
+    const apigw = new FileBasedApiGwConstruct(this, "FileBasedApiGw-Test", {
       restApiProps: {
         restApiName: "file-based-api-gw-test",
       },
@@ -65,7 +61,7 @@ export class InfraStack extends cdk.Stack {
           // DB_SECRET_ARN: auroraServerless.cluster.secret?.secretArn || "", // The ARN of the secret containing the credentials
 
           // Note: this will only be accessible by the Lambda function that has the correct permissions
-          EXAMPLE_QUEUE_URL: exampleQueue.queue.queueUrl,
+          EXAMPLE_QUEUE_URL: exampleQueue.queueUrl,
         },
       },
       logGroupProps: {
@@ -76,9 +72,26 @@ export class InfraStack extends cdk.Stack {
       logGroupNameSuffix: "test-api",
     });
 
+    const jobToLambda = {
+      "example-queue": apigw.lambdasMap.get("/v1/jobs-POST"),
+    };
+
+    for (const [queueName, lambda] of Object.entries(jobToLambda)) {
+      if (!lambda) {
+        throw new Error("Lambda not found for job");
+      }
+
+      const queue = jobQueues.queueMap.get(queueName);
+      if (!queue) {
+        throw new Error("Queue not found for job");
+      }
+
+      queue.grantSendMessages(lambda);
+    }
+
     new SqsJobsConstruct(this, "SqsJobsConstruct", {
       jobsDirectoryPath: path.join(__dirname, "../../dist/jobs"),
-      queueMap,
+      queueMap: jobQueues.queueMap,
       logGroupNameSuffix: "jobs",
     });
 

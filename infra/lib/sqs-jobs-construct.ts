@@ -33,16 +33,37 @@ export class SqsJobsConstruct extends Construct {
     this.#lambdaProps = props.lambdaProps ?? {};
     this.#logGroupNameSuffix = props.logGroupNameSuffix;
 
-    this.createLambdasAndQueues(props.jobsDirectoryPath);
+    this.createLambdasAndQueues({
+      dir: props.jobsDirectoryPath,
+      prefix: "",
+    });
   }
 
-  private createLambdasAndQueues(jobsDirectoryPath: string) {
-    const files = fs.readdirSync(jobsDirectoryPath);
+  private createLambdasAndQueues({
+    dir,
+    prefix,
+  }: {
+    dir: string;
+    prefix: string;
+  }) {
+    const files = fs.readdirSync(dir);
 
-    files.forEach((file) => {
-      if (file.endsWith(".js")) {
-        const functionName = file.replace(".js", "");
-        const filePath = path.join(jobsDirectoryPath, file);
+    for (const file of files) {
+      const filePath = path.join(dir, file);
+      const stats = fs.statSync(filePath);
+
+      if (stats.isDirectory()) {
+        // Recursively create Lambda functions for subdirectories
+        const folderName = path.basename(filePath);
+
+        this.createLambdasAndQueues({
+          dir: filePath,
+          prefix: `${prefix}${folderName}/`,
+        });
+      } else if (file.endsWith(".js")) {
+        // Get the function name from the parent folder
+        const filePathArr = filePath.split("/");
+        const functionName = filePathArr[filePathArr.length - 2];
 
         const queue = this.#queueMap.get(functionName);
 
@@ -74,6 +95,6 @@ export class SqsJobsConstruct extends Construct {
         // Add the SQS queue as an event source for the Lambda function
         lambda.addEventSource(new SqsEventSource(queue));
       }
-    });
+    }
   }
 }

@@ -18,6 +18,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-sqs": "^3.535.0",
     "@faker-js/faker": "^8.4.0",
     "@paralleldrive/cuid2": "^2.2.2",
     "@prisma/client": "^5.6.0",
