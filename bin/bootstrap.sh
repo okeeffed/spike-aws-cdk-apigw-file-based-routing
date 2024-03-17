@@ -3,6 +3,9 @@
 # Exit on any errors
 set -e
 
+# Build the current files out
+npm run build
+
 # # Step 1: Run docker compose up
 # echo "Starting LocalStack with Docker Compose..."
 # docker compose up -d
@@ -36,6 +39,6 @@ echo "Running AWS CDK commands in the infra directory..."
 # echo "Running seed code..."
 # pnpm seed
 
-echo "Please update .env.local with the DB_CONNECTION_URL and DB_SECRET_ARN"
+# echo "Please update .env.local with the DB_CONNECTION_URL and DB_SECRET_ARN"
 
 echo "Setup complete."

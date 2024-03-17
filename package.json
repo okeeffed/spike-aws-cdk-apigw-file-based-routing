@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "build": "esbuild src/index.ts --bundle --platform=node --target=es2020 --format=cjs --outfile=dist/index.js --external:aws-sdk --minify",
+    "build": "node bin/build.js",
     "bootstrap": "bin/bootstrap.sh",
     "bootstrap-llrt": "bin/bootstrap-llrt.sh",
     "teardown": "bin/teardown.sh",
@@ -26,6 +26,7 @@
     "dotenv-flow": "^4.1.0",
     "drizzle-orm": "^0.29.3",
     "drizzle-zod": "^0.5.1",
+    "glob": "^10.3.10",
     "pg": "^8.11.3",
     "postgres": "^3.4.3",
     "prisma": "^5.8.1",
