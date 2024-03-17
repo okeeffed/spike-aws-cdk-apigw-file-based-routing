@@ -73,11 +73,13 @@ export class InfraStack extends cdk.Stack {
       },
       lambdaDirectoryPath: path.join(__dirname, "../../dist/api"),
       LambdaFunctionClass: process.env.LLRT ? LlrtFunction : NodejsFunction,
+      logGroupNameSuffix: "test-api",
     });
 
     new SqsJobsConstruct(this, "SqsJobsConstruct", {
       jobsDirectoryPath: path.join(__dirname, "../../dist/jobs"),
       queueMap,
+      logGroupNameSuffix: "jobs",
     });
 
     // TODO: When completed

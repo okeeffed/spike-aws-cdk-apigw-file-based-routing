@@ -7,7 +7,6 @@ import {
   LambdaIntegration,
   RestApiProps,
 } from "aws-cdk-lib/aws-apigateway";
-import { build } from "esbuild";
 import { ILogGroup, LogGroup, LogGroupProps } from "aws-cdk-lib/aws-logs";
 import {
   NodejsFunction,
@@ -22,6 +21,7 @@ interface FileBasedApiGwProps {
   LambdaFunctionClass: typeof NodejsFunction | typeof LlrtFunction;
   lambdaProps?: Partial<NodejsFunctionProps> | Partial<LlrtFunctionProps>;
   logGroupProps?: LogGroupProps;
+  logGroupNameSuffix?: string;
 }
 
 type HttpMethod =
@@ -59,6 +59,7 @@ export class FileBasedApiGwConstruct extends Construct {
   #lambdaProps: FileBasedApiGwProps["lambdaProps"];
   #logGroupProps: FileBasedApiGwProps["logGroupProps"];
   #lambdaDirectoryPath: FileBasedApiGwProps["lambdaDirectoryPath"];
+  #logGroupNameSuffix: FileBasedApiGwProps["logGroupNameSuffix"];
 
   constructor(scope: Construct, id: string, props: FileBasedApiGwProps) {
     super(scope, id);
@@ -66,6 +67,7 @@ export class FileBasedApiGwConstruct extends Construct {
     this.#LambdaFunctionClass = props.LambdaFunctionClass;
     this.#lambdaProps = props.lambdaProps ?? {};
     this.#lambdaDirectoryPath = props.lambdaDirectoryPath;
+    this.#logGroupNameSuffix = props.logGroupNameSuffix;
 
     // Define the API Gateway
     this.restApi = new RestApi(this, "FileBasedApiGw", props.restApiProps);
@@ -182,7 +184,9 @@ export class FileBasedApiGwConstruct extends Construct {
     // Used for the CloudWatch Logs
     const logGroupId = removeSpecialCharacters(`${method}${routePath}LogGroup`);
     const logGroupName = removeSpecialCharacters(
-      `/aws/lambda/${routePath}${method}`
+      `/aws/lambda/${routePath}${method}${
+        this.#logGroupNameSuffix ? `-${this.#logGroupNameSuffix}` : ""
+      }`
     );
 
     // Create log group for Lambda function

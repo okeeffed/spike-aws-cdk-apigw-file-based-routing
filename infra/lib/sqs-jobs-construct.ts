@@ -14,6 +14,7 @@ import { LlrtFunctionProps } from "cdk-lambda-llrt";
 interface JobBasedLambdaProps {
   jobsDirectoryPath: string;
   queueMap: Map<string, Queue>;
+  logGroupNameSuffix?: string;
   logGroupProps?: LogGroupProps;
   lambdaProps?: Partial<NodejsFunctionProps> | Partial<LlrtFunctionProps>;
 }
@@ -22,6 +23,7 @@ export class SqsJobsConstruct extends Construct {
   #logGroupProps: JobBasedLambdaProps["logGroupProps"];
   #queueMap: JobBasedLambdaProps["queueMap"];
   #lambdaProps: JobBasedLambdaProps["lambdaProps"];
+  #logGroupNameSuffix: JobBasedLambdaProps["logGroupNameSuffix"];
 
   constructor(scope: Construct, id: string, props: JobBasedLambdaProps) {
     super(scope, id);
@@ -29,6 +31,7 @@ export class SqsJobsConstruct extends Construct {
     this.#logGroupProps = props.logGroupProps;
     this.#queueMap = props.queueMap;
     this.#lambdaProps = props.lambdaProps ?? {};
+    this.#logGroupNameSuffix = props.logGroupNameSuffix;
 
     this.createLambdasAndQueues(props.jobsDirectoryPath);
   }
@@ -49,7 +52,9 @@ export class SqsJobsConstruct extends Construct {
 
         // Used for the CloudWatch Logs
         const logGroupId = `Job${functionName}LogGroup`;
-        const logGroupName = `/aws/lambda/Job${functionName}`;
+        const logGroupName = `/aws/lambda/Job${functionName}${
+          this.#logGroupNameSuffix ? `-${this.#logGroupNameSuffix}` : ""
+        }`;
 
         // Create log group for Lambda function
         const logGroup = new LogGroup(this, logGroupId, {
