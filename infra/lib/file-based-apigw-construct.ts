@@ -17,15 +17,11 @@ import { Function } from "aws-cdk-lib/aws-lambda";
 import { LlrtFunction, LlrtFunctionProps } from "cdk-lambda-llrt";
 
 interface FileBasedApiGwProps {
-  lambdaInputDirectoryPath: string;
-  lambdaOutputDirectoryPath: string;
+  lambdaDirectoryPath: string;
   restApiProps: RestApiProps;
   LambdaFunctionClass: typeof NodejsFunction | typeof LlrtFunction;
   lambdaProps?: Partial<NodejsFunctionProps> | Partial<LlrtFunctionProps>;
   logGroupProps?: LogGroupProps;
-  esbuildOptions?: {
-    external?: string[];
-  };
 }
 
 type HttpMethod =
@@ -78,25 +74,21 @@ export class FileBasedApiGwConstruct extends Construct {
   #LambdaFunctionClass: FileBasedApiGwProps["LambdaFunctionClass"];
   #lambdaProps: FileBasedApiGwProps["lambdaProps"];
   #logGroupProps: FileBasedApiGwProps["logGroupProps"];
-  #esbuildOptions: FileBasedApiGwProps["esbuildOptions"];
-  #lambdaInputDirectoryPath: FileBasedApiGwProps["lambdaInputDirectoryPath"];
-  #lambdaOutputDirectoryPath: FileBasedApiGwProps["lambdaOutputDirectoryPath"];
+  #lambdaDirectoryPath: FileBasedApiGwProps["lambdaDirectoryPath"];
 
   constructor(scope: Construct, id: string, props: FileBasedApiGwProps) {
     super(scope, id);
 
     this.#LambdaFunctionClass = props.LambdaFunctionClass;
     this.#lambdaProps = props.lambdaProps ?? {};
-    this.#esbuildOptions = props.esbuildOptions ?? {};
-    this.#lambdaInputDirectoryPath = props.lambdaInputDirectoryPath;
-    this.#lambdaOutputDirectoryPath = props.lambdaOutputDirectoryPath;
+    this.#lambdaDirectoryPath = props.lambdaDirectoryPath;
 
     // Define the API Gateway
     this.restApi = new RestApi(this, "FileBasedApiGw", props.restApiProps);
 
     // Start traversing the directory from this input path
     this.createLambdaFunctions({
-      dir: this.#lambdaInputDirectoryPath,
+      dir: this.#lambdaDirectoryPath,
       prefix: "",
     });
   }
@@ -127,9 +119,9 @@ export class FileBasedApiGwConstruct extends Construct {
           dir: filePath,
           prefix: `${prefix}${folderName}/`,
         });
-      } else if (filePath.endsWith(".ts")) {
+      } else if (filePath.endsWith(".js")) {
         await this.createApiGwEndpoint({
-          tsFilePath: filePath,
+          inputFilePath: filePath,
         });
       }
     }
@@ -161,13 +153,17 @@ export class FileBasedApiGwConstruct extends Construct {
     });
   }
 
-  private parseMethod({ tsFilePath }: { tsFilePath: string }): HttpMethod {
+  private parseMethod({
+    inputFilePath,
+  }: {
+    inputFilePath: string;
+  }): HttpMethod {
     try {
-      const fileName = getFileNameWithoutExtension(tsFilePath);
+      const fileName = getFileNameWithoutExtension(inputFilePath);
 
       if (!isHttpMethod(fileName)) {
         throw new Error(
-          `Filename ${fileName} at ${tsFilePath} is not of type HttpMethod`
+          `Filename ${fileName} at ${inputFilePath} is not of type HttpMethod`
         );
       }
 
@@ -183,42 +179,17 @@ export class FileBasedApiGwConstruct extends Construct {
     }
   }
 
-  private async compileTypeScript({ tsFilePath }: { tsFilePath: string }) {
-    // naive approach to finding the method
-    const method = this.parseMethod({ tsFilePath });
-
-    const jsFilePath = tsFilePath
-      .replace(this.#lambdaInputDirectoryPath, this.#lambdaOutputDirectoryPath)
-      .replace(/\.ts$/, ".js");
-
-    // This is the name of the file when converted into a index file for the output dir
-    const outfile = path.resolve(path.dirname(jsFilePath), method, "index.js");
-
-    // Effectively running esbuild <tsFilePath> --platform=node --target=es2020 --outfile=<outfile> --format=esm --bundle --minify
-    await build({
-      entryPoints: [tsFilePath],
-      outfile: outfile,
-      platform: "node",
-      target: "es2020",
-      format: "esm",
-      bundle: true,
-      minify: true,
-      ...this.#esbuildOptions,
-    });
-    return { outfile, method };
-  }
-
   /**
    * Creates the API resource based on the TypeScript file.
    * This includes the lambda and associated log groups.
    */
-  private async createApiGwEndpoint({ tsFilePath }: { tsFilePath: string }) {
-    // Compile TypeScript file to JavaScript
-    const { outfile, method } = await this.compileTypeScript({
-      tsFilePath,
-    });
-
-    const routePath = this.parseApiResourcePath({ outfile });
+  private async createApiGwEndpoint({
+    inputFilePath,
+  }: {
+    inputFilePath: string;
+  }) {
+    const method = this.parseMethod({ inputFilePath });
+    const routePath = this.parseApiResourcePath({ inputFilePath });
 
     // Used for the CloudWatch Logs
     const logGroupId = removeSpecialCharacters(`${method}${routePath}LogGroup`);
@@ -235,7 +206,7 @@ export class FileBasedApiGwConstruct extends Construct {
     const lambda = this.constructLambdaFunction({
       method,
       routePath,
-      entry: outfile,
+      entry: inputFilePath,
       logGroup,
     });
 
@@ -250,10 +221,14 @@ export class FileBasedApiGwConstruct extends Construct {
   /**
    * String manipulation helper to create the API resource path.
    */
-  private parseApiResourcePath({ outfile }: { outfile: string }): string {
+  private parseApiResourcePath({
+    inputFilePath,
+  }: {
+    inputFilePath: string;
+  }): string {
     // Only parse the routes from the given output dir file
-    const filePathFromLambdaRoot = outfile.replace(
-      this.#lambdaOutputDirectoryPath,
+    const filePathFromLambdaRoot = inputFilePath.replace(
+      this.#lambdaDirectoryPath,
       ""
     );
 

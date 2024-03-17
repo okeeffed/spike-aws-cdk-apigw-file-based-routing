@@ -71,11 +71,7 @@ export class InfraStack extends cdk.Stack {
       logGroupProps: {
         removalPolicy: cdk.RemovalPolicy.DESTROY, // Optional: Specify removal policy
       },
-      esbuildOptions: {
-        external: ["aws-sdk"],
-      },
-      lambdaInputDirectoryPath: path.join(__dirname, "../../src/api"),
-      lambdaOutputDirectoryPath: path.join(__dirname, "../../dist/api"),
+      lambdaDirectoryPath: path.join(__dirname, "../../dist/api"),
       LambdaFunctionClass: process.env.LLRT ? LlrtFunction : NodejsFunction,
     });
 
