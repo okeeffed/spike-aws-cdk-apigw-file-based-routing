@@ -11,9 +11,7 @@ import { SecurityStack } from "../stacks/security-stack";
 const app = new cdk.App();
 const stage = app.node.tryGetContext("stage") || "dev";
 
-const securityStack = new SecurityStack(app, "LambdaFileRouterSecurityStack", {
-  lambdasData,
-});
+const securityStack = new SecurityStack(app, "LambdaFileRouterSecurityStack");
 
 const monitoringStack = new MonitoringStack(
   app,
