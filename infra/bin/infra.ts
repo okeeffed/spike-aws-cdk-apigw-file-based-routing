@@ -3,15 +3,18 @@ import "source-map-support/register";
 import * as cdk from "aws-cdk-lib";
 import { ApplicationStack } from "../stacks/application-stack";
 import { MonitoringStack } from "../stacks/monitoring-stack";
-import * as fs from "fs";
-import * as path from "path";
+import baseContext from "../cdk.json";
+import lambdasData from "../data/api-lambdas.json";
+import { GatewayStack } from "../stacks/gateway-stack";
 
-const lambdasData = JSON.parse(
-  fs.readFileSync(path.resolve("../data/lambdas.json"), "utf-8")
-);
+const context = {
+  ...baseContext,
+  "aws:cdk:bundling-stacks": [],
+};
 
-const app = new cdk.App();
+const app = new cdk.App(context);
 const stage = app.node.tryGetContext("stage") || "dev";
+
 const monitoringStack = new MonitoringStack(
   app,
   "LambdaFileRouterTestMonitoringStack",
@@ -34,4 +37,9 @@ const applicationStack = new ApplicationStack(app, "LambdaFileRouterTest", {
   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
   lambdasData,
   lambdaLogGroups: monitoringStack.logGroups,
+});
+
+new GatewayStack(app, "LambdaFileRouterTestGatewayStack", {
+  lambdasData,
+  applicationStack,
 });

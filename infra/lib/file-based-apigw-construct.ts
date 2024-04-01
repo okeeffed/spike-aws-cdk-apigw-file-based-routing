@@ -17,7 +17,6 @@ import { LogGroup } from "aws-cdk-lib/aws-logs";
 
 interface FileBasedApiGwProps {
   lambdaDirectoryPath: string;
-  restApiProps: RestApiProps;
   LambdaFunctionClass: typeof NodejsFunction | typeof LlrtFunction;
   lambdaProps?: Partial<NodejsFunctionProps> | Partial<LlrtFunctionProps>;
   lambdasData: LambdaData[];
@@ -30,11 +29,11 @@ interface FileBasedApiGwProps {
  * Each resource created includes the lambda and associated log group.
  */
 export class FileBasedApiGwConstruct extends Construct {
-  public restApi: RestApi;
   public lambdasMap: Map<string, Function> = new Map<string, Function>();
   private LambdaFunctionClass: FileBasedApiGwProps["LambdaFunctionClass"];
   private lambdaProps: FileBasedApiGwProps["lambdaProps"];
   private lambdaLogGroups: FileBasedApiGwProps["lambdaLogGroups"];
+  private lambdaDirectoryPath: string;
 
   constructor(scope: Construct, id: string, props: FileBasedApiGwProps) {
     super(scope, id);
@@ -42,9 +41,7 @@ export class FileBasedApiGwConstruct extends Construct {
     this.LambdaFunctionClass = props.LambdaFunctionClass;
     this.lambdaProps = props.lambdaProps ?? {};
     this.lambdaLogGroups = props.lambdaLogGroups;
-
-    // Define the API Gateway
-    this.restApi = new RestApi(this, "FileBasedApiGw", props.restApiProps);
+    this.lambdaDirectoryPath = props.lambdaDirectoryPath;
 
     for (const lambdaData of props.lambdasData) {
       this.createApiGwEndpoint(lambdaData);
@@ -56,13 +53,15 @@ export class FileBasedApiGwConstruct extends Construct {
    * This includes the lambda and associated log groups.
    */
   private async createApiGwEndpoint({ routePath, method, entry }: LambdaData) {
+    const resolvedEntry = path.join(this.lambdaDirectoryPath, entry);
+
     const lambdaFn = new this.LambdaFunctionClass(
       this,
       `${method}${routePath}`,
       {
         runtime: Runtime.NODEJS_20_X,
         handler: `handler`,
-        entry: path.resolve("../../dist", entry),
+        entry: resolvedEntry,
         logGroup: this.lambdaLogGroups.get(entry),
         // Use this to attach lambdas, role, vpc and environment props
         // or even just make some overrides
@@ -70,12 +69,12 @@ export class FileBasedApiGwConstruct extends Construct {
       }
     );
 
-    // Create API Gateway route for the Lambda function
-    const apiResource = this.restApi.root.resourceForPath(routePath);
-    apiResource.addMethod(
-      method.toUpperCase(),
-      new LambdaIntegration(lambdaFn)
-    );
+    // // Create API Gateway route for the Lambda function
+    // const apiResource = this.restApi.root.resourceForPath(routePath);
+    // apiResource.addMethod(
+    //   method.toUpperCase(),
+    //   new LambdaIntegration(lambdaFn)
+    // );
 
     // Store the Lambda function in a map
     this.lambdasMap.set(entry, lambdaFn);

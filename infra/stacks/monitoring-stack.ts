@@ -25,8 +25,10 @@ export class MonitoringStack extends cdk.Stack {
     super(scope, id, props);
 
     props.lambdasData.forEach((data) => {
-      const functionName = removeSpecialCharacters(data.entry);
-      const logGroupName = `/aws/lambda/${props.stage}${data.routePath}-${data.method}`;
+      const functionName = removeSpecialCharacters(
+        `${data.routePath}-${data.method}`
+      );
+      const logGroupName = `/aws/lambda/${props.stage}-${functionName}`;
 
       const logGroup = new logs.LogGroup(this, `${functionName}LogGroup`, {
         logGroupName: logGroupName,

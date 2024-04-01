@@ -124,7 +124,10 @@ async function main() {
     prefix: "",
   });
 
-  fs.writeFileSync(OUTPUT_FILE_PATH, JSON.stringify([...lambdasMap], null, 2));
+  fs.writeFileSync(
+    OUTPUT_FILE_PATH,
+    JSON.stringify([...lambdasMap.values()], null, 2)
+  );
 }
 
 main();

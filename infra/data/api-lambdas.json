@@ -1,50 +1,32 @@
 [
-  [
-    "/v1/jobs-POST",
-    {
-      "method": "POST",
-      "routePath": "/v1/jobs",
-      "entry": "/api/v1/jobs/POST/index.js"
-    }
-  ],
-  [
-    "/v1/posts-GET",
-    {
-      "method": "GET",
-      "routePath": "/v1/posts",
-      "entry": "/api/v1/posts/GET/index.js"
-    }
-  ],
-  [
-    "/v1/posts-POST",
-    {
-      "method": "POST",
-      "routePath": "/v1/posts",
-      "entry": "/api/v1/posts/POST/index.js"
-    }
-  ],
-  [
-    "/v1/posts/{id}-GET",
-    {
-      "method": "GET",
-      "routePath": "/v1/posts/{id}",
-      "entry": "/api/v1/posts/{id}/GET/index.js"
-    }
-  ],
-  [
-    "/v1/users-GET",
-    {
-      "method": "GET",
-      "routePath": "/v1/users",
-      "entry": "/api/v1/users/GET/index.js"
-    }
-  ],
-  [
-    "/v1/users-POST",
-    {
-      "method": "POST",
-      "routePath": "/v1/users",
-      "entry": "/api/v1/users/POST/index.js"
-    }
-  ]
+  {
+    "method": "POST",
+    "routePath": "/v1/jobs",
+    "entry": "/api/v1/jobs/POST/index.js"
+  },
+  {
+    "method": "GET",
+    "routePath": "/v1/posts",
+    "entry": "/api/v1/posts/GET/index.js"
+  },
+  {
+    "method": "POST",
+    "routePath": "/v1/posts",
+    "entry": "/api/v1/posts/POST/index.js"
+  },
+  {
+    "method": "GET",
+    "routePath": "/v1/posts/{id}",
+    "entry": "/api/v1/posts/{id}/GET/index.js"
+  },
+  {
+    "method": "GET",
+    "routePath": "/v1/users",
+    "entry": "/api/v1/users/GET/index.js"
+  },
+  {
+    "method": "POST",
+    "routePath": "/v1/users",
+    "entry": "/api/v1/users/POST/index.js"
+  }
 ]
