@@ -1,30 +1,30 @@
 #!/usr/bin/env node
 import "source-map-support/register";
 import * as cdk from "aws-cdk-lib";
-import { ApplicationStack } from "../stacks/application-stack";
+import { ComputeStack } from "../stacks/compute-stack";
 import { MonitoringStack } from "../stacks/monitoring-stack";
-import baseContext from "../cdk.json";
+
 import lambdasData from "../data/api-lambdas.json";
-import { GatewayStack } from "../stacks/gateway-stack";
+import { ApplicationStack } from "../stacks/application-stack";
+import { SecurityStack } from "../stacks/security-stack";
 
-const context = {
-  ...baseContext,
-  "aws:cdk:bundling-stacks": [],
-};
-
-const app = new cdk.App(context);
+const app = new cdk.App();
 const stage = app.node.tryGetContext("stage") || "dev";
+
+const securityStack = new SecurityStack(app, "LambdaFileRouterSecurityStack", {
+  lambdasData,
+});
 
 const monitoringStack = new MonitoringStack(
   app,
-  "LambdaFileRouterTestMonitoringStack",
+  "LambdaFileRouterMonitoringStack",
   {
     lambdasData,
     stage,
   }
 );
 
-const applicationStack = new ApplicationStack(app, "LambdaFileRouterTest", {
+const computeStack = new ComputeStack(app, "LambdaFileRouterComputeStack", {
   /* If you don't specify 'env', this stack will be environment-agnostic.
    * Account/Region-dependent features and context lookups will not work,
    * but a single synthesized template can be deployed anywhere. */
@@ -37,9 +37,10 @@ const applicationStack = new ApplicationStack(app, "LambdaFileRouterTest", {
   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
   lambdasData,
   lambdaLogGroups: monitoringStack.logGroups,
+  lambdaExecutionRole: securityStack.lambdaExecutionRole,
 });
 
-new GatewayStack(app, "LambdaFileRouterTestGatewayStack", {
+new ApplicationStack(app, "LambdaFileRouterGatewayStack", {
   lambdasData,
-  applicationStack,
+  computeStack,
 });
