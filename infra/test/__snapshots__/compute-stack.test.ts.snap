@@ -16,7 +16,7 @@ exports[`ComputeStack Gateway stack matches snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "55e09d1331f3c15805c03f7e4696a748c5f623d31d70063d1ce97454a38160a3.zip",
+          "S3Key": "d5dac4bae04a6a195a3edf9db5b42af3b328dcf2ba2890f07b6ee1844e09ab5c.zip",
         },
         "Environment": {
           "Variables": {
@@ -42,7 +42,7 @@ exports[`ComputeStack Gateway stack matches snapshot 1`] = `
           "S3Bucket": {
             "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
           },
-          "S3Key": "8e335beec948763b2e1df30f4f84309a074aa3a06bd88e0f5b63c9b6c158bb37.zip",
+          "S3Key": "1a0c7919d7b6043d9d668f7e2a4797685a7864edc050d014cb15391d31e4600d.zip",
         },
         "Environment": {
           "Variables": {

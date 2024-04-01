@@ -3,14 +3,12 @@ import { Construct } from "constructs";
 import * as iam from "aws-cdk-lib/aws-iam";
 import { LambdaData } from "../types";
 
-export interface SecurityStackProps extends cdk.StackProps {
-  lambdasData: LambdaData[];
-}
+export interface SecurityStackProps extends cdk.StackProps {}
 
 export class SecurityStack extends cdk.Stack {
   public lambdaExecutionRole: iam.Role;
 
-  constructor(scope: Construct, id: string, props: SecurityStackProps) {
+  constructor(scope: Construct, id: string, props?: SecurityStackProps) {
     super(scope, id, props);
 
     this.lambdaExecutionRole = new iam.Role(this, "LambdaExecutionRole", {
