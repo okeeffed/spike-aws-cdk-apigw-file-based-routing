@@ -55,27 +55,5 @@ export class ComputeStack extends cdk.Stack {
         lambdaLogGroups: props.lambdaLogGroups,
       }
     );
-
-    // const jobToLambda = {
-    //   "example-queue": this.fileBasedApiGw.lambdasMap.get("/v1/jobs-POST"),
-    // };
-
-    // for (const [queueName, lambda] of Object.entries(jobToLambda)) {
-    //   if (!lambda) {
-    //     throw new Error("Lambda not found for job");
-    //   }
-
-    //   const queue = jobQueues.queueMap.get(queueName);
-    //   if (!queue) {
-    //     throw new Error("Queue not found for job");
-    //   }
-
-    //   queue.grantSendMessages(lambda);
-    // }
-
-    // new SqsJobsConstruct(this, "SqsJobsConstruct", {
-    //   jobsDirectoryPath: path.join(__dirname, "../../dist/jobs"),
-    //   queueMap: jobQueues.queueMap,
-    // });
   }
 }

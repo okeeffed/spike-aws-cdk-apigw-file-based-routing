@@ -11,18 +11,18 @@ import { SecurityStack } from "../stacks/security-stack";
 const app = new cdk.App();
 const stage = app.node.tryGetContext("stage") || "dev";
 
-const securityStack = new SecurityStack(app, "LambdaFileRouterSecurityStack");
+const securityStack = new SecurityStack(app, "SplitStackExampleSecurityStack");
 
 const monitoringStack = new MonitoringStack(
   app,
-  "LambdaFileRouterMonitoringStack",
+  "SplitStackExampleMonitoringStack",
   {
     lambdasData,
     stage,
   }
 );
 
-const computeStack = new ComputeStack(app, "LambdaFileRouterComputeStack", {
+const computeStack = new ComputeStack(app, "SplitStackExampleComputeStack", {
   /* If you don't specify 'env', this stack will be environment-agnostic.
    * Account/Region-dependent features and context lookups will not work,
    * but a single synthesized template can be deployed anywhere. */
@@ -38,7 +38,15 @@ const computeStack = new ComputeStack(app, "LambdaFileRouterComputeStack", {
   lambdaExecutionRole: securityStack.lambdaExecutionRole,
 });
 
-new ApplicationStack(app, "LambdaFileRouterGatewayStack", {
-  lambdasData,
-  computeStack,
-});
+const applicationStack = new ApplicationStack(
+  app,
+  "SplitStackExampleApplicationStack",
+  {
+    lambdasData,
+    computeStack,
+  }
+);
+
+computeStack.addDependency(monitoringStack);
+computeStack.addDependency(securityStack);
+applicationStack.addDependency(computeStack);
